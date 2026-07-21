@@ -1,1 +1,13 @@
-# Docker Compose configuration for Museum App
+services:
+  db:
+    image: postgres:16
+    container_name: museum_db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: museum
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
