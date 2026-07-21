@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from passlib.context import CryptContext
 
-from models import Base, User, Artist, Artwork
+from app.models import Base, User, Artist, Artwork
 
 # For testing locally, we provide a default SQLite fallback if PostgreSQL is not available,
 # or we can rely on a database URL env variable.
