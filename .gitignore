@@ -1,0 +1,16 @@
+# Python
+backend/venv/
+backend/app/__pycache__/
+__pycache__/
+*.pyc
+*.db
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Database
+pgdata/
+
+# Env secrets (optional - see note below)
+# .env
