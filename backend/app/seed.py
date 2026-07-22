@@ -1,11 +1,14 @@
 import csv
 import os
 import sys
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from passlib.context import CryptContext
 
 from app.models import Base, User, Artist, Artwork
+
+load_dotenv()
 
 # For testing locally, we provide a default SQLite fallback if PostgreSQL is not available,
 # or we can rely on a database URL env variable.
