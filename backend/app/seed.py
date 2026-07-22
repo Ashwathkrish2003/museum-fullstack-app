@@ -1,7 +1,7 @@
 import csv
 import os
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from passlib.context import CryptContext
 from app.models import Base, User, Artist, Artwork
@@ -58,25 +58,21 @@ def seed_data():
                 artists_count += 1
         db.commit()
         print(f"Seeded {artists_count} artists.")
-        if "postgresql" in DATABASE_URL:
-            db.execute(text("SELECT setval('artists_id_seq', (SELECT COALESCE(MAX(id), 1) FROM artists))"))
-            db.commit()
     else:
         print("Artists already seeded, skipping.")
 
     if db.query(Artwork).count() == 0:
+        existing_artist_ids = {row[0] for row in db.query(Artist.id).all()}
         artworks_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'artworks.csv')
         artworks_count = 0
-        existing_artist_ids = {row[0] for row in db.query(Artist.id).all()}
         print("Seeding artworks...")
         with open(artworks_file, newline='', encoding='utf-8-sig') as f:
             reader = csv.DictReader(f)
             for row in reader:
                 if artworks_count >= 500:
                     break
-                artist_id_value = clean_int(row.get('Artist ID'))
-                if artist_id_value not in existing_artist_ids:
-                    artist_id_value = None
+                raw_artist_id = clean_int(row.get('Artist ID'))
+                safe_artist_id = raw_artist_id if raw_artist_id in existing_artist_ids else None
                 artwork = Artwork(
                     id=clean_int(row.get('Artwork ID')),
                     title=row.get('Title'),
@@ -84,15 +80,12 @@ def seed_data():
                     medium=row.get('Medium'),
                     classification=row.get('Classification'),
                     department=row.get('Department'),
-                    artist_id=artist_id_value
+                    artist_id=safe_artist_id
                 )
                 db.add(artwork)
                 artworks_count += 1
         db.commit()
         print(f"Seeded {artworks_count} artworks.")
-        if "postgresql" in DATABASE_URL:
-            db.execute(text("SELECT setval('artworks_id_seq', (SELECT COALESCE(MAX(id), 1) FROM artworks))"))
-            db.commit()
     else:
         print("Artworks already seeded, skipping.")
 
@@ -100,3 +93,4 @@ def seed_data():
 
 if __name__ == "__main__":
     seed_data()
+EOF
