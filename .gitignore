@@ -12,5 +12,7 @@ frontend/dist/
 # Database
 pgdata/
 
-# Env secrets (optional - see note below)
-# .env
+# Env secrets
+.env
+*.env
+**/.env
