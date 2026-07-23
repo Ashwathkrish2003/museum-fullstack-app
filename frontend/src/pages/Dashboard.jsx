@@ -140,9 +140,13 @@ function LoadingSkeleton() {
         <div style={{ ...pulse, height: '110px' }} />
         <div style={{ ...pulse, height: '110px' }} />
       </div>
+      <div style={{ ...grid2wide, marginBottom: '1.25rem' }}>
+        <div style={{ ...pulse, height: '280px' }} />
+        <div style={{ ...pulse, height: '280px' }} />
+      </div>
       <div style={grid2wide}>
-        <div style={{ ...pulse, height: '280px' }} />
-        <div style={{ ...pulse, height: '280px' }} />
+        <div style={{ ...pulse, height: '220px' }} />
+        <div style={{ ...pulse, height: '220px' }} />
       </div>
     </>
   );
@@ -206,8 +210,8 @@ export default function Dashboard() {
             />
           </div>
 
-          {/* ── Bar lists ── */}
-          <div style={grid2wide}>
+          {/* ── Bar lists row 1: Nationalities / Departments ── */}
+          <div style={{ ...grid2wide, marginBottom: '1.25rem' }}>
             <BarList
               title="Top Nationalities"
               items={stats.top_nationalities}
@@ -219,6 +223,22 @@ export default function Dashboard() {
               items={stats.top_departments}
               nameKey="department"
               accentColor={C.peach}
+            />
+          </div>
+
+          {/* ── Bar lists row 2: Gender / Classifications ── */}
+          <div style={grid2wide}>
+            <BarList
+              title="Gender Breakdown"
+              items={stats.gender_breakdown}
+              nameKey="gender"
+              accentColor={C.blue}
+            />
+            <BarList
+              title="Top Classifications"
+              items={stats.top_classifications}
+              nameKey="classification"
+              accentColor={C.green}
             />
           </div>
         </>

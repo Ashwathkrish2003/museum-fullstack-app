@@ -719,8 +719,8 @@ export default function Artworks() {
               <colgroup>
                 {/* checkbox | id | title | date | medium | classification | department | artist_id | actions */}
                 <col style={{ width: '36px' }} />
-                <col style={{ width: '60px' }} />
-                <col style={{ width: '25%' }} />
+                <col style={{ width: '105px' }} />
+                <col style={{ width: '22%' }} />
                 <col style={{ width: '9%' }} />
                 <col style={{ width: '14%' }} />
                 <col style={{ width: '14%' }} />
@@ -741,8 +741,8 @@ export default function Artworks() {
                       />
                     )}
                   </th>
-                  {['ID', 'Title', 'Date', 'Medium', 'Classification', 'Department', 'Artist ID', ''].map((h) => (
-                    <th key={h || 'actions'} style={S.th}>{h}</th>
+                  {['ARTWORK ID', 'Title', 'Date', 'Medium', 'Classification', 'Department', 'Artist ID', ''].map((h) => (
+                    <th key={h || 'actions'} style={h === 'ARTWORK ID' ? { ...S.th, whiteSpace: 'nowrap' } : S.th}>{h}</th>
                   ))}
                 </tr>
               </thead>
