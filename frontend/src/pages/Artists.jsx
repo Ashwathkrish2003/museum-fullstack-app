@@ -269,9 +269,10 @@ export default function Artists() {
 
   /* add-single form */
   const [form, setForm]           = useState(EMPTY_FORM);
-  const [addError, setAddError]   = useState('');
-  const [addSuccess, setAddSuccess] = useState('');
   const [addBusy, setAddBusy]     = useState(false);
+  /* add toast (auto-dismissing) */
+  const [addToast, setAddToast]   = useState({ visible: false, message: '', type: 'success' });
+  const addToastTimerRef          = useRef(null);
 
   /* bulk-add textarea */
   const [bulkText, setBulkText]   = useState('');
@@ -304,24 +305,31 @@ export default function Artists() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
+  function showAddToast(message, type = 'success') {
+    if (addToastTimerRef.current) clearTimeout(addToastTimerRef.current);
+    setAddToast({ visible: true, message, type });
+    addToastTimerRef.current = setTimeout(() => {
+      setAddToast({ visible: false, message: '', type: 'success' });
+    }, 3500);
+  }
+
   async function handleAddSingle(e) {
     e.preventDefault();
-    setAddError(''); setAddSuccess('');
-    if (!form.name.trim()) { setAddError('Name is required.'); return; }
+    if (!form.name.trim()) { showAddToast('Name is required.', 'error'); return; }
     setAddBusy(true);
     try {
       await client.post('/artists/', {
         name: form.name.trim(),
         nationality: form.nationality.trim() || null,
-        gender: form.gender || null,   // '' → null → backend stores as Unknown
+        gender: form.gender.trim() || null,   // '' → null → backend stores as Unknown
         birth_year: form.birth_year ? parseInt(form.birth_year, 10) || null : null,
         death_year: form.death_year ? parseInt(form.death_year, 10) || null : null,
       });
       setForm(EMPTY_FORM);
-      setAddSuccess('Artist added successfully.');
+      showAddToast('Artist added successfully!', 'success');
       fetchArtists();
     } catch {
-      setAddError('Failed to add artist. Check your input and try again.');
+      showAddToast('Failed to add artist. Check your input and try again.', 'error');
     } finally {
       setAddBusy(false);
     }
@@ -539,6 +547,7 @@ export default function Artists() {
               {[
                 { key: 'name',        label: 'Name *',     type: 'text',   placeholder: 'Artist name' },
                 { key: 'nationality', label: 'Nationality', type: 'text',   placeholder: 'e.g. American' },
+                { key: 'gender',      label: 'Gender',      type: 'text',   placeholder: 'e.g. Female' },
                 { key: 'birth_year',  label: 'Birth Year',  type: 'number', placeholder: 'e.g. 1950' },
                 { key: 'death_year',  label: 'Death Year',  type: 'number', placeholder: 'e.g. 2010' },
               ].map(({ key, label, type, placeholder }) => (
@@ -556,24 +565,6 @@ export default function Artists() {
                   />
                 </div>
               ))}
-              {/* Gender — controlled dropdown */}
-              <div>
-                <label style={S.label} htmlFor="field-gender">Gender</label>
-                <select
-                  id="field-gender"
-                  className="art-input"
-                  name="gender"
-                  value={form.gender}
-                  onChange={handleFormChange}
-                  style={{ ...S.input, cursor: 'pointer' }}
-                >
-                  <option value="">— Unknown —</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Others">Others</option>
-                  <option value="Not Disclose">Not Disclose</option>
-                </select>
-              </div>
             </div>
             <button
               type="submit"
@@ -582,7 +573,6 @@ export default function Artists() {
             >
               {addBusy ? 'Adding…' : '+ Add Artist'}
             </button>
-            <Feedback error={addError} success={addSuccess} />
           </form>
         ) : (
           <div>
@@ -776,6 +766,20 @@ export default function Artists() {
         <div style={S.toast}>
           <span style={{ fontSize: '0.85rem', color: C.text }}>{undoToast.message}</span>
           <button style={S.btnUndo} onClick={undoToast.onUndo}>Undo</button>
+        </div>
+      )}
+
+      {/* add artist success / error toast */}
+      {addToast.visible && (
+        <div style={{
+          ...S.toast,
+          borderLeft: `4px solid ${addToast.type === 'success' ? C.green : C.red}`,
+          bottom: undoToast.visible ? '5rem' : '1.5rem',
+        }}>
+          <span style={{ fontSize: '0.85rem', color: addToast.type === 'success' ? C.green : C.red }}>
+            {addToast.type === 'success' ? '✓' : '⚠'}
+          </span>
+          <span style={{ fontSize: '0.85rem', color: C.text }}>{addToast.message}</span>
         </div>
       )}
 

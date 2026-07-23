@@ -27,14 +27,6 @@ def _clean(value: str | None, title_case: bool = True) -> str | None:
     return value.title() if title_case else value
 
 
-def _normalize_gender(value: str | None) -> str | None:
-    """Map free-text gender to a canonical option, or None (→ Unknown in analytics)."""
-    if not value:
-        return None
-    key = re.sub(r'\s+', ' ', value.strip()).lower()
-    return _GENDER_OPTIONS.get(key, None)
-
-
 def normalize_artist(data: dict) -> dict:
     """Return a copy of data with all text fields normalised."""
     return {
@@ -43,8 +35,7 @@ def normalize_artist(data: dict) -> dict:
         "name":        _clean(data.get("name"), title_case=False) or data.get("name", ""),
         # Categorical fields: Title Case
         "nationality": _clean(data.get("nationality")),
-        # Gender: strict enum — unrecognised values stored as null
-        "gender":      _normalize_gender(data.get("gender")),
+        "gender":      _clean(data.get("gender")),
     }
 
 
