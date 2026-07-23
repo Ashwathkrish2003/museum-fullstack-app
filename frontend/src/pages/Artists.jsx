@@ -31,7 +31,7 @@ const S = {
   },
   pageHeading: {
     margin: '0 0 0.25rem',
-    fontSize: '1.5rem',
+    fontSize: '2rem',
     fontWeight: 700,
     color: C.text,
   },
@@ -237,11 +237,52 @@ function parseBulkText(text) {
     .filter((a) => a.name);
 }
 
-/* ─────────────────────────── sub-components ────────────────────────── */
 function Feedback({ error, success }) {
-  if (error) return <div style={S.errorBox}>{error}</div>;
-  if (success) return <div style={S.successBox}>{success}</div>;
-  return null;
+  const [visibleMsg, setVisibleMsg] = useState({ text: '', isError: false });
+  const [fading, setFading] = useState(false);
+  const timerRef = useRef(null);
+  const fadeTimerRef = useRef(null);
+
+  useEffect(() => {
+    if (error || success) {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+      setVisibleMsg({ text: error || success, isError: !!error });
+      setFading(false);
+
+      timerRef.current = setTimeout(() => {
+        setFading(true);
+        fadeTimerRef.current = setTimeout(() => {
+          setVisibleMsg({ text: '', isError: false });
+          setFading(false);
+        }, 400); // 400ms fade transition duration
+      }, 3500); // 3.5s display duration
+    } else {
+      setVisibleMsg({ text: '', isError: false });
+      setFading(false);
+    }
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+    };
+  }, [error, success]);
+
+  if (!visibleMsg.text) return null;
+
+  const boxStyle = visibleMsg.isError ? S.errorBox : S.successBox;
+
+  return (
+    <div
+      style={{
+        ...boxStyle,
+        opacity: fading ? 0 : 1,
+        transition: 'opacity 0.4s ease-out',
+      }}
+    >
+      {visibleMsg.text}
+    </div>
+  );
 }
 
 /* ─────────────────────────── main component ────────────────────────── */
@@ -511,29 +552,55 @@ export default function Artists() {
         }
       `}</style>
 
-      <h1 style={S.pageHeading}>🎨 Artists</h1>
+      <h1 style={S.pageHeading}>Artists</h1>
       <p style={S.pageSub}>Browse, add, and manage artists in the collection.</p>
 
       {/* ── Add Artist ──────────────────────────────────────────────── */}
       <div style={{ ...S.card, borderTop: `3px solid ${addTab === 'single' ? C.blue : C.mauve}` }}>
-        <div style={{ display: 'flex', gap: '1.5rem', borderBottom: `1px solid ${C.border}`, marginBottom: '1.25rem' }}>
+        <div
+          style={{
+            display: 'inline-flex',
+            backgroundColor: C.surface2,
+            padding: '4px',
+            borderRadius: '10px',
+            border: `1px solid ${C.border}`,
+            marginBottom: '1.25rem',
+            gap: '4px',
+          }}
+        >
           <button
+            type="button"
             style={{
-              background: 'none', border: 'none', padding: '0 0.25rem 0.5rem', fontSize: '0.85rem', fontWeight: 600,
-              cursor: 'pointer', fontFamily: FONT, transition: 'color 0.15s, border-color 0.15s',
-              color: addTab === 'single' ? C.text : C.muted,
-              borderBottom: addTab === 'single' ? `2px solid ${C.blue}` : '2px solid transparent',
+              background: addTab === 'single' ? C.blue : 'transparent',
+              border: addTab === 'single' ? 'none' : `1px solid ${C.border}`,
+              padding: '0.45rem 1rem',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: FONT,
+              borderRadius: '7px',
+              color: addTab === 'single' ? '#1e1e2e' : C.subtext,
+              transition: 'all 0.2s ease',
+              boxShadow: addTab === 'single' ? '0 2px 6px rgba(0,0,0,0.2)' : 'none',
             }}
             onClick={() => setAddTab('single')}
           >
             Single Add
           </button>
           <button
+            type="button"
             style={{
-              background: 'none', border: 'none', padding: '0 0.25rem 0.5rem', fontSize: '0.85rem', fontWeight: 600,
-              cursor: 'pointer', fontFamily: FONT, transition: 'color 0.15s, border-color 0.15s',
-              color: addTab === 'bulk' ? C.text : C.muted,
-              borderBottom: addTab === 'bulk' ? `2px solid ${C.mauve}` : '2px solid transparent',
+              background: addTab === 'bulk' ? C.mauve : 'transparent',
+              border: addTab === 'bulk' ? 'none' : `1px solid ${C.border}`,
+              padding: '0.45rem 1rem',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: FONT,
+              borderRadius: '7px',
+              color: addTab === 'bulk' ? '#1e1e2e' : C.subtext,
+              transition: 'all 0.2s ease',
+              boxShadow: addTab === 'bulk' ? '0 2px 6px rgba(0,0,0,0.2)' : 'none',
             }}
             onClick={() => setAddTab('bulk')}
           >
@@ -573,6 +640,7 @@ export default function Artists() {
             >
               {addBusy ? 'Adding…' : '+ Add Artist'}
             </button>
+            <Feedback error={addToast.type === 'error' && addToast.visible ? addToast.message : ''} success={addToast.type === 'success' && addToast.visible ? addToast.message : ''} />
           </form>
         ) : (
           <div>

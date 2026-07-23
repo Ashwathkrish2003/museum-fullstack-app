@@ -29,7 +29,7 @@ const page = {
 
 const heading = {
   margin: '0 0 0.25rem',
-  fontSize: '1.5rem',
+  fontSize: '2rem',
   fontWeight: 700,
   color: C.text,
 };
