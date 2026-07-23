@@ -313,7 +313,7 @@ export default function Artists() {
       await client.post('/artists/', {
         name: form.name.trim(),
         nationality: form.nationality.trim() || null,
-        gender: form.gender.trim() || null,
+        gender: form.gender || null,   // '' → null → backend stores as Unknown
         birth_year: form.birth_year ? parseInt(form.birth_year, 10) || null : null,
         death_year: form.death_year ? parseInt(form.death_year, 10) || null : null,
       });
@@ -450,8 +450,9 @@ export default function Artists() {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         .artist-row:hover td { background-color: #24273a; }
-        input.art-input:focus { border-color: #89b4fa; }
+        input.art-input:focus, select.art-input:focus { border-color: #89b4fa; }
         textarea.art-ta:focus { border-color: #89b4fa; }
+        select.art-input option { background-color: #24273a; color: #cdd6f4; }
         input[type="checkbox"] {
           appearance: none;
           -webkit-appearance: none;
@@ -536,11 +537,10 @@ export default function Artists() {
           <form onSubmit={handleAddSingle} noValidate>
             <div style={S.formGrid}>
               {[
-                { key: 'name',        label: 'Name *',       type: 'text',   placeholder: 'Artist name' },
-                { key: 'nationality', label: 'Nationality',  type: 'text',   placeholder: 'e.g. American' },
-                { key: 'gender',      label: 'Gender',       type: 'text',   placeholder: 'e.g. Female' },
-                { key: 'birth_year',  label: 'Birth Year',   type: 'number', placeholder: 'e.g. 1950' },
-                { key: 'death_year',  label: 'Death Year',   type: 'number', placeholder: 'e.g. 2010' },
+                { key: 'name',        label: 'Name *',     type: 'text',   placeholder: 'Artist name' },
+                { key: 'nationality', label: 'Nationality', type: 'text',   placeholder: 'e.g. American' },
+                { key: 'birth_year',  label: 'Birth Year',  type: 'number', placeholder: 'e.g. 1950' },
+                { key: 'death_year',  label: 'Death Year',  type: 'number', placeholder: 'e.g. 2010' },
               ].map(({ key, label, type, placeholder }) => (
                 <div key={key}>
                   <label style={S.label} htmlFor={`field-${key}`}>{label}</label>
@@ -556,6 +556,24 @@ export default function Artists() {
                   />
                 </div>
               ))}
+              {/* Gender — controlled dropdown */}
+              <div>
+                <label style={S.label} htmlFor="field-gender">Gender</label>
+                <select
+                  id="field-gender"
+                  className="art-input"
+                  name="gender"
+                  value={form.gender}
+                  onChange={handleFormChange}
+                  style={{ ...S.input, cursor: 'pointer' }}
+                >
+                  <option value="">— Unknown —</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Others">Others</option>
+                  <option value="Not Disclose">Not Disclose</option>
+                </select>
+              </div>
             </div>
             <button
               type="submit"

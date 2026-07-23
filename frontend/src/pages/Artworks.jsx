@@ -282,9 +282,10 @@ export default function Artworks() {
 
   /* add-single form */
   const [form, setForm]               = useState(EMPTY_FORM);
-  const [addError, setAddError]       = useState('');
-  const [addSuccess, setAddSuccess]   = useState('');
   const [addBusy, setAddBusy]         = useState(false);
+  /* add toast (auto-dismissing) */
+  const [addToast, setAddToast] = useState({ visible: false, message: '', type: 'success' });
+  const addToastTimerRef = useRef(null);
 
   /* bulk-add textarea */
   const [bulkText, setBulkText]         = useState('');
@@ -317,10 +318,17 @@ export default function Artworks() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
+  function showAddToast(message, type = 'success') {
+    if (addToastTimerRef.current) clearTimeout(addToastTimerRef.current);
+    setAddToast({ visible: true, message, type });
+    addToastTimerRef.current = setTimeout(() => {
+      setAddToast({ visible: false, message: '', type: 'success' });
+    }, 3500);
+  }
+
   async function handleAddSingle(e) {
     e.preventDefault();
-    setAddError(''); setAddSuccess('');
-    if (!form.title.trim()) { setAddError('Title is required.'); return; }
+    if (!form.title.trim()) { showAddToast('Title is required.', 'error'); return; }
     setAddBusy(true);
     try {
       await client.post('/artworks/', {
@@ -332,10 +340,10 @@ export default function Artworks() {
         artist_id:      form.artist_id ? parseInt(form.artist_id, 10) || null : null,
       });
       setForm(EMPTY_FORM);
-      setAddSuccess('Artwork added successfully.');
+      showAddToast('Artwork added successfully!', 'success');
       fetchArtworks();
     } catch {
-      setAddError('Failed to add artwork. Check your input and try again.');
+      showAddToast('Failed to add artwork. Check your input and try again.', 'error');
     } finally {
       setAddBusy(false);
     }
@@ -581,7 +589,6 @@ export default function Artworks() {
             >
               {addBusy ? 'Adding…' : '+ Add Artwork'}
             </button>
-            <Feedback error={addError} success={addSuccess} />
           </form>
         ) : (
           <div>
@@ -826,6 +833,20 @@ export default function Artworks() {
         <div style={S.toast}>
           <span style={{ fontSize: '0.85rem', color: C.text }}>{undoToast.message}</span>
           <button style={S.btnUndo} onClick={undoToast.onUndo}>Undo</button>
+        </div>
+      )}
+
+      {/* add artwork success / error toast */}
+      {addToast.visible && (
+        <div style={{
+          ...S.toast,
+          borderLeft: `4px solid ${addToast.type === 'success' ? C.green : C.red}`,
+          bottom: undoToast.visible ? '5rem' : '1.5rem',  // stack above undo toast if both visible
+        }}>
+          <span style={{ fontSize: '0.85rem', color: addToast.type === 'success' ? C.green : C.red }}>
+            {addToast.type === 'success' ? '✓' : '⚠'}
+          </span>
+          <span style={{ fontSize: '0.85rem', color: C.text }}>{addToast.message}</span>
         </div>
       )}
 

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
+import re
 
 from app.database import get_db
 from app.auth import get_current_user
@@ -12,6 +13,40 @@ router = APIRouter(
     dependencies=[Depends(get_current_user)],
 )
 
+# Valid gender options (canonical stored forms)
+_GENDER_OPTIONS = {"male": "Male", "female": "Female", "others": "Others", "not disclose": "Not Disclose"}
+
+
+def _clean(value: str | None, title_case: bool = True) -> str | None:
+    """Trim, collapse spaces, and optionally title-case a string field."""
+    if value is None:
+        return None
+    value = re.sub(r'\s+', ' ', value.strip())
+    if not value:
+        return None
+    return value.title() if title_case else value
+
+
+def _normalize_gender(value: str | None) -> str | None:
+    """Map free-text gender to a canonical option, or None (→ Unknown in analytics)."""
+    if not value:
+        return None
+    key = re.sub(r'\s+', ' ', value.strip()).lower()
+    return _GENDER_OPTIONS.get(key, None)
+
+
+def normalize_artist(data: dict) -> dict:
+    """Return a copy of data with all text fields normalised."""
+    return {
+        **data,
+        # Name: preserve original casing — only trim + collapse spaces
+        "name":        _clean(data.get("name"), title_case=False) or data.get("name", ""),
+        # Categorical fields: Title Case
+        "nationality": _clean(data.get("nationality")),
+        # Gender: strict enum — unrecognised values stored as null
+        "gender":      _normalize_gender(data.get("gender")),
+    }
+
 
 @router.get("/", response_model=List[schemas.ArtistOut])
 def list_artists(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
@@ -21,7 +56,7 @@ def list_artists(skip: int = 0, limit: int = 100, db: Session = Depends(get_db))
 
 @router.post("/", response_model=schemas.ArtistOut, status_code=status.HTTP_201_CREATED)
 def create_artist(artist: schemas.ArtistCreate, db: Session = Depends(get_db)):
-    db_artist = models.Artist(**artist.dict())
+    db_artist = models.Artist(**normalize_artist(artist.dict()))
     db.add(db_artist)
     db.commit()
     db.refresh(db_artist)
@@ -30,7 +65,7 @@ def create_artist(artist: schemas.ArtistCreate, db: Session = Depends(get_db)):
 
 @router.post("/bulk", response_model=List[schemas.ArtistOut], status_code=status.HTTP_201_CREATED)
 def bulk_create_artists(payload: schemas.ArtistBulkCreate, db: Session = Depends(get_db)):
-    db_artists = [models.Artist(**a.dict()) for a in payload.artists]
+    db_artists = [models.Artist(**normalize_artist(a.dict())) for a in payload.artists]
     db.bulk_save_objects(db_artists)
     db.commit()
     # Re-query to return inserted records with IDs
@@ -52,3 +87,4 @@ def bulk_delete_artists(payload: schemas.BulkDeleteRequest, db: Session = Depend
     db.query(models.Artist).filter(models.Artist.id.in_(payload.ids)).delete(synchronize_session=False)
     db.commit()
     return None
+
